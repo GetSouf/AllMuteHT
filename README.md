@@ -2,7 +2,7 @@
 
 Lightweight Windows utility that toggles **all active microphones** with a global hotkey.
 
-No GUI framework, no tray app framework, no heavy dependencies - just WinAPI + WASAPI.
+No heavy GUI framework, no external runtime dependencies - just WinAPI + WASAPI.
 
 ## Features
 
@@ -11,9 +11,11 @@ No GUI framework, no tray app framework, no heavy dependencies - just WinAPI + W
 - Console-only setup (menu + CLI commands)
 - Optional autostart on Windows sign-in
 - Hidden daemon mode (single-instance protection)
+- System tray icon with context menu (`Toggle mute`, `Exit`)
+- Dynamic tray tooltip + icon state (`Muted` / `Unmuted`)
 - Small top-center visual indicator for ~1 second on toggle:
-  - `🎤` = unmuted
-  - `🔇` = muted
+  - `UNMUTED`
+  - `MUTED`
 
 ## Quick Start
 
@@ -45,7 +47,23 @@ No GUI framework, no tray app framework, no heavy dependencies - just WinAPI + W
 | `mute` | Mute all microphones |
 | `unmute` | Unmute all microphones |
 | `notify on\|off` | Enable/disable beep on toggle |
+| `lang en` | Keep English UI setting in config |
 | `help` | Show help |
+
+## Interactive Menu
+
+When launched without arguments, the app opens a numeric menu:
+
+- `1` Show status
+- `2` Configure hotkey
+- `3` Enable autostart and run daemon
+- `4` Disable autostart and stop daemon
+- `5` Start daemon
+- `6` Stop daemon
+- `7` Toggle mute/unmute
+- `8` Toggle notification sound
+- `9` Help
+- `0` Exit
 
 ## Hotkey Format
 
@@ -79,11 +97,18 @@ Steps:
 Output binary:
 - `muter/AllMuteHotkey/x64/Release/AllMuteHotkey.exe`
 
+## Tray + Overlay UX
+
+- Left/right click tray icon -> context menu
+- `Toggle mute` toggles all active microphones
+- `Exit` stops daemon cleanly
+- Overlay appears at top-center for ~1 second after each toggle
+
 ## Architecture
 
 ```text
 main.cpp       CLI + menu + command routing
-daemon.cpp     hidden message window, hotkey/mouse hook loop, overlay indicator
+daemon.cpp     hidden message window, hotkey/mouse hook loop, tray icon, overlay
 audio.cpp      WASAPI microphone enumeration + mute control
 hotkey.cpp     hotkey string parsing + formatting
 config.cpp     config file in %APPDATA%\AllMuteHotkey\config.ini
