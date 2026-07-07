@@ -109,6 +109,7 @@ int run_menu() {
 
     while (true) {
         auto config = amh::load_config().value_or(amh::Config{});
+        amh::set_ui_language(config.language);
         amh::print_menu(config);
 
         if (!config.configured) {
@@ -224,6 +225,16 @@ int run_menu() {
             case 11:
                 amh::print_help();
                 break;
+            case 12:
+                config.language = (config.language == "en") ? "ru" : "en";
+                amh::set_ui_language(config.language);
+                if (!amh::save_config(config)) {
+                    amh::print_error(L"Не удалось сохранить язык.");
+                    break;
+                }
+                amh::print_success(config.language == "en" ? L"Language switched to English."
+                                                           : L"Язык переключен на русский.");
+                break;
             default:
                 amh::print_error(L"Такого пункта нет.");
                 break;
@@ -242,6 +253,7 @@ int run_cli(int argc, wchar_t** argv) {
 
     const std::wstring command = to_lower(argv[1]);
     auto config = amh::load_config().value_or(amh::Config{});
+    amh::set_ui_language(config.language);
 
     if (is_help_command(command)) {
         amh::print_help();
@@ -250,6 +262,30 @@ int run_cli(int argc, wchar_t** argv) {
 
     if (command == L"menu") {
         return run_menu();
+    }
+
+    if (command == L"lang") {
+        if (argc < 3) {
+            amh::print_error(L"Использование: AllMuteHotkey lang ru|en");
+            return 1;
+        }
+        const std::wstring value = to_lower(argv[2]);
+        if (value == L"ru") {
+            config.language = "ru";
+        } else if (value == L"en") {
+            config.language = "en";
+        } else {
+            amh::print_error(L"Использование: AllMuteHotkey lang ru|en");
+            return 1;
+        }
+        if (!amh::save_config(config)) {
+            amh::print_error(L"Не удалось сохранить язык.");
+            return 1;
+        }
+        amh::set_ui_language(config.language);
+        amh::print_success(config.language == "en" ? L"Language switched to English."
+                                                   : L"Язык переключен на русский.");
+        return 0;
     }
 
     if (command == L"status") {

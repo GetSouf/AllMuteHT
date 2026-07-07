@@ -44,10 +44,22 @@ std::optional<std::uint32_t> parse_function_key(const std::wstring& token) {
 std::optional<std::uint32_t> parse_main_key(const std::wstring& token) {
     if (token.size() == 1) {
         const wchar_t ch = token[0];
-        if ((ch >= L'a' && ch <= L'z') || (ch >= L'0' && ch <= L'9')) {
-            const SHORT mapped = VkKeyScanW(ch);
-            if (mapped != -1) {
-                return static_cast<std::uint32_t>(LOBYTE(mapped));
+        const SHORT mapped_default = VkKeyScanW(ch);
+        if (mapped_default != -1) {
+            return static_cast<std::uint32_t>(LOBYTE(mapped_default));
+        }
+
+        // Try all installed layouts so Cyrillic letters also work.
+        const int layout_count = GetKeyboardLayoutList(0, nullptr);
+        if (layout_count > 0) {
+            std::vector<HKL> layouts(static_cast<std::size_t>(layout_count));
+            if (GetKeyboardLayoutList(layout_count, layouts.data()) > 0) {
+                for (const HKL layout : layouts) {
+                    const SHORT mapped = VkKeyScanExW(ch, layout);
+                    if (mapped != -1) {
+                        return static_cast<std::uint32_t>(LOBYTE(mapped));
+                    }
+                }
             }
         }
         return std::nullopt;

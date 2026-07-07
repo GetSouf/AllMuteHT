@@ -7,7 +7,11 @@
 
 namespace amh {
 
+enum class UiLanguage { Ru, En };
+
 void setup_console_utf8();
+void set_ui_language(const std::string& code);
+std::string get_ui_language_code();
 void print_help();
 void print_first_run_hint();
 void print_status(const Config& config);

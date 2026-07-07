@@ -13,6 +13,7 @@ struct Config {
     bool autostart = false;
     bool notify_sound = true;
     bool configured = false;
+    std::string language = "ru";
 };
 
 std::filesystem::path config_directory();

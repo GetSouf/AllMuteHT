@@ -91,6 +91,10 @@ std::optional<Config> load_config() {
             parse_bool(value, config.autostart);
         } else if (key == "notify_sound") {
             parse_bool(value, config.notify_sound);
+        } else if (key == "language") {
+            if (value == "en" || value == "ru") {
+                config.language = value;
+            }
         }
     }
 
@@ -117,6 +121,7 @@ bool save_config(const Config& config) {
     file << "hotkey_vk=" << config.hotkey_vk << "\n";
     file << "autostart=" << (config.autostart ? "1" : "0") << "\n";
     file << "notify_sound=" << (config.notify_sound ? "1" : "0") << "\n";
+    file << "language=" << config.language << "\n";
     return true;
 }
 

@@ -7,31 +7,55 @@
 
 #include <iostream>
 #include <limits>
+#include <locale>
 #include <windows.h>
 
 namespace amh {
 
+namespace {
+UiLanguage g_ui_language = UiLanguage::Ru;
+
+const wchar_t* tr(const wchar_t* ru, const wchar_t* en) {
+    return g_ui_language == UiLanguage::En ? en : ru;
+}
+}  // namespace
+
 void setup_console_utf8() {
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
+    try {
+        std::locale::global(std::locale(""));
+        std::wcout.imbue(std::locale());
+        std::wcin.imbue(std::locale());
+        std::wcerr.imbue(std::locale());
+    } catch (...) {
+        // Fall back to default locale if system locale is unavailable.
+    }
+}
+
+void set_ui_language(const std::string& code) {
+    g_ui_language = (code == "en") ? UiLanguage::En : UiLanguage::Ru;
+}
+
+std::string get_ui_language_code() {
+    return g_ui_language == UiLanguage::En ? "en" : "ru";
 }
 
 void print_help() {
-    std::wcout << L"\nAllMuteHotkey — глобальный мут всех микрофонов по хоткею\n\n";
-    std::wcout << L"Использование:\n";
-    std::wcout << L"  AllMuteHotkey menu                Открыть меню с управлением по цифрам\n";
-    std::wcout << L"  AllMuteHotkey run                 Запустить фоновый режим (без окна)\n";
-    std::wcout << L"  AllMuteHotkey status              Показать хоткей, автозагрузку и микрофоны\n";
-    std::wcout << L"  AllMuteHotkey hotkey Ctrl+Shift+M Задать глобальный хоткей\n";
-    std::wcout << L"  AllMuteHotkey toggle              Переключить мут всех микрофонов\n";
-    std::wcout << L"  AllMuteHotkey mute                Выключить все микрофоны\n";
-    std::wcout << L"  AllMuteHotkey unmute              Включить все микрофоны\n";
-    std::wcout << L"  AllMuteHotkey install             Добавить в автозагрузку и запустить\n";
-    std::wcout << L"  AllMuteHotkey uninstall           Убрать из автозагрузки и остановить\n";
-    std::wcout << L"  AllMuteHotkey start               Запустить фоновый режим\n";
-    std::wcout << L"  AllMuteHotkey stop                Остановить фоновый режим\n";
-    std::wcout << L"  AllMuteHotkey notify on|off       Звук при переключении мутa\n";
-    std::wcout << L"  AllMuteHotkey help                Показать эту справку\n\n";
+    std::wcout << L"\n" << tr(L"AllMuteHotkey — глобальный мут всех микрофонов по хоткею",
+                            L"AllMuteHotkey — global mute for all microphones")
+               << L"\n\n";
+    std::wcout << tr(L"Использование:\n", L"Usage:\n");
+    std::wcout << tr(L"  AllMuteHotkey menu                Открыть меню с управлением по цифрам\n",
+                     L"  AllMuteHotkey menu                Open numeric menu\n");
+    std::wcout << tr(L"  AllMuteHotkey run                 Запустить фоновый режим (без окна)\n",
+                     L"  AllMuteHotkey run                 Run daemon mode (hidden)\n");
+    std::wcout << tr(L"  AllMuteHotkey status              Показать хоткей, автозагрузку и микрофоны\n",
+                     L"  AllMuteHotkey status              Show hotkey, autostart and microphones\n");
+    std::wcout << tr(L"  AllMuteHotkey hotkey Ctrl+Shift+M Задать глобальный хоткей\n",
+                     L"  AllMuteHotkey hotkey Ctrl+Shift+M Set global hotkey\n");
+    std::wcout << tr(L"  AllMuteHotkey lang ru|en          Переключить язык интерфейса\n",
+                     L"  AllMuteHotkey lang ru|en          Switch interface language\n");
+    std::wcout << tr(L"  AllMuteHotkey help                Показать эту справку\n\n",
+                     L"  AllMuteHotkey help                Show this help\n\n");
     print_hotkey_examples();
     std::wcout << L"\n";
 }
@@ -77,18 +101,20 @@ void print_status(const Config& config) {
 
 void print_menu(const Config& config) {
     std::wcout << L"\n=== AllMuteHotkey ===\n";
-    std::wcout << L"1. Показать статус\n";
-    std::wcout << L"2. Настроить хоткей\n";
-    std::wcout << L"3. Включить автозагрузку и запустить фон\n";
-    std::wcout << L"4. Выключить автозагрузку и остановить фон\n";
-    std::wcout << L"5. Запустить фоновый режим\n";
-    std::wcout << L"6. Остановить фоновый режим\n";
-    std::wcout << L"7. Выключить все микрофоны\n";
-    std::wcout << L"8. Включить все микрофоны\n";
-    std::wcout << L"9. Переключить mute/unmute\n";
-    std::wcout << L"10. Переключить звук уведомления\n";
-    std::wcout << L"11. Справка по командам\n";
-    std::wcout << L"0. Выход\n\n";
+    std::wcout << tr(L"1. Показать статус\n", L"1. Show status\n");
+    std::wcout << tr(L"2. Настроить хоткей\n", L"2. Configure hotkey\n");
+    std::wcout << tr(L"3. Включить автозагрузку и запустить фон\n", L"3. Enable autostart and run daemon\n");
+    std::wcout << tr(L"4. Выключить автозагрузку и остановить фон\n",
+                     L"4. Disable autostart and stop daemon\n");
+    std::wcout << tr(L"5. Запустить фоновый режим\n", L"5. Start daemon\n");
+    std::wcout << tr(L"6. Остановить фоновый режим\n", L"6. Stop daemon\n");
+    std::wcout << tr(L"7. Выключить все микрофоны\n", L"7. Mute all microphones\n");
+    std::wcout << tr(L"8. Включить все микрофоны\n", L"8. Unmute all microphones\n");
+    std::wcout << tr(L"9. Переключить mute/unmute\n", L"9. Toggle mute/unmute\n");
+    std::wcout << tr(L"10. Переключить звук уведомления\n", L"10. Toggle notification sound\n");
+    std::wcout << tr(L"11. Справка по командам\n", L"11. Help\n");
+    std::wcout << tr(L"12. Переключить язык (RU/EN)\n", L"12. Switch language (RU/EN)\n");
+    std::wcout << tr(L"0. Выход\n\n", L"0. Exit\n\n");
 
     if (config.configured) {
         Hotkey hotkey{config.hotkey_modifiers, config.hotkey_vk};
@@ -115,7 +141,7 @@ std::wstring prompt_line(const std::wstring& label) {
 
 int prompt_menu_choice() {
     while (true) {
-        std::wcout << L"Введите номер пункта: ";
+        std::wcout << tr(L"Введите номер пункта: ", L"Enter menu number: ");
         std::wstring line;
         if (!std::getline(std::wcin, line)) {
             return 0;
@@ -130,12 +156,12 @@ int prompt_menu_choice() {
         } catch (...) {
         }
 
-        print_error(L"Введите число из меню.");
+        print_error(tr(L"Введите число из меню.", L"Enter a number from menu."));
     }
 }
 
 void print_error(const std::wstring& message) {
-    std::wcerr << L"Ошибка: " << message << L"\n";
+    std::wcerr << tr(L"Ошибка: ", L"Error: ") << message << L"\n";
 }
 
 void print_success(const std::wstring& message) {
