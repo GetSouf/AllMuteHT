@@ -35,6 +35,8 @@ HWND g_overlay_hwnd = nullptr;
 HFONT g_overlay_font = nullptr;
 bool g_overlay_muted = false;
 NOTIFYICONDATAW g_tray_nid = {};
+HICON g_icon_muted = nullptr;
+HICON g_icon_unmuted = nullptr;
 
 void show_overlay(bool muted);
 
@@ -53,6 +55,15 @@ void update_tray_tooltip(bool muted) {
     Shell_NotifyIconW(NIM_MODIFY, &g_tray_nid);
 }
 
+void update_tray_icon(bool muted) {
+    if (g_tray_nid.hWnd == nullptr) {
+        return;
+    }
+    g_tray_nid.uFlags = NIF_ICON;
+    g_tray_nid.hIcon = muted ? g_icon_muted : g_icon_unmuted;
+    Shell_NotifyIconW(NIM_MODIFY, &g_tray_nid);
+}
+
 void trigger_toggle() {
     if (g_state == nullptr) {
         return;
@@ -63,6 +74,7 @@ void trigger_toggle() {
             play_notify_sound(now_muted);
         }
         show_overlay(now_muted);
+        update_tray_icon(now_muted);
         update_tray_tooltip(now_muted);
     }
 }
@@ -98,13 +110,20 @@ void show_tray_menu(HWND hwnd) {
 }
 
 bool create_tray_icon(HWND hwnd) {
+    if (!g_icon_muted) {
+        g_icon_muted = LoadIconW(nullptr, IDI_ERROR);
+    }
+    if (!g_icon_unmuted) {
+        g_icon_unmuted = LoadIconW(nullptr, IDI_INFORMATION);
+    }
+
     ZeroMemory(&g_tray_nid, sizeof(g_tray_nid));
     g_tray_nid.cbSize = sizeof(g_tray_nid);
     g_tray_nid.hWnd = hwnd;
     g_tray_nid.uID = kTrayIconId;
     g_tray_nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     g_tray_nid.uCallbackMessage = kTrayCallbackMessage;
-    g_tray_nid.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    g_tray_nid.hIcon = g_icon_unmuted;
     wcsncpy_s(g_tray_nid.szTip, L"AllMuteHotkey", _TRUNCATE);
     return Shell_NotifyIconW(NIM_ADD, &g_tray_nid) == TRUE;
 }
@@ -112,9 +131,6 @@ bool create_tray_icon(HWND hwnd) {
 void remove_tray_icon() {
     if (g_tray_nid.hWnd != nullptr) {
         Shell_NotifyIconW(NIM_DELETE, &g_tray_nid);
-        if (g_tray_nid.hIcon) {
-            DestroyIcon(g_tray_nid.hIcon);
-        }
         ZeroMemory(&g_tray_nid, sizeof(g_tray_nid));
     }
 }
@@ -141,8 +157,8 @@ LRESULT CALLBACK overlay_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
             SetBkMode(hdc, TRANSPARENT);
             SetTextColor(hdc, g_overlay_muted ? RGB(255, 90, 90) : RGB(90, 220, 120));
 
-            const wchar_t* icon_text = g_overlay_muted ? L"\U0001F507" : L"\U0001F3A4";
-            DrawTextW(hdc, icon_text, -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            const wchar_t* overlay_text = g_overlay_muted ? L"MUTED" : L"UNMUTED";
+            DrawTextW(hdc, overlay_text, -1, &rect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
             EndPaint(hwnd, &ps);
             return 0;
